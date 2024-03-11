@@ -1,4 +1,9 @@
 # Bot c/ IA para Geração de Relatórios
+
 ChatBot com IA para geração de relatórios do Geoex
 
-- Chat streamlit para testes de geracao de relatórios sobre Projetos (WIP)
+- MVP: Geracao de consultas baseado em prompt
+
+* [ ] Conexão da API do ChatGPT
+* [ ] Treinamento da IA em dados e metadados sobre o banco de dados do geoex
+* [ ] Prototipo no streamlit
