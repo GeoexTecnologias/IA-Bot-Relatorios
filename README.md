@@ -6,4 +6,4 @@ ChatBot com IA para geração de relatórios do Geoex
 
 * [ ] Conexão da API do ChatGPT
 * [ ] Treinamento da IA em dados e metadados sobre o banco de dados do geoex
-* [ ] Prototipo no streamlit
+* [ ] Prototipo no Streamlit
