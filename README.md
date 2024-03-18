@@ -4,6 +4,6 @@ ChatBot com IA para geração de relatórios do Geoex
 
 - MVP: Geracao de consultas baseado em prompt
 
-* [ ] Conexão da API do ChatGPT
-* [ ] Treinamento da IA em dados e metadados sobre o banco de dados do geoex
-* [ ] Prototipo no Streamlit
+* [X] Conexão da API do ChatGPT
+* [X] Treinamento da IA em dados e metadados sobre o banco de dados do geoex
+* [ ] Seleção somente das tabelas relevantes e Criação dos Indexes no Pinecone
