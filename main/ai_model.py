@@ -31,23 +31,16 @@ def generate_query_ai(index_name, question):
     chain = RetrievalQA.from_chain_type(
         llm=llm, chain_type='stuff', retriever=retriever)
 
-    prompt_template = """Gere consultas SQL para SQL Server usando as colunas: {cols}.
-    apenas responda como consulta, sem nunhuma outra informação, exceto quando nao for possivel gerar a consulta.
-    para responder esta pergunta de forma mais ao pé da letra possível: '{question}',
-    use a seguinte estrutura:
-    SQLQuery: <consulta_retornada_do_modelo>
-    """
+    dialect = 'MS SQL Server'
+    cols = ['Projeto', 'Nota', 'ProjetoProgramacaoCarteira']
+    few_shot_examples = '',
+    question = question
 
-    prompt_template = PromptTemplate.from_template(template=prompt_template)
-    prompt = prompt_template.format(
-        question=question, cols='[Projeto, Nota, ProjetoProgramacaoCarteira]')
+    prompt = prompt_template(dialect, cols, few_shot_examples, question)
 
-    # validando a query
     result = chain.invoke(prompt)['result']
-
-    # pegue somente o que vem depois do SQLQuery:
+    print(result)
     result = result.split('SQLQuery:')[1]
-    # pegue o que esta entre aspas
     result = result.split('"')[1]
 
     print(result)
@@ -100,16 +93,13 @@ def connect_db():
     return pymssql.connect(server, username, password, database), uri
 
 
-def prompt_template(dialeto, table_info, few_shot_examples, input):
+def prompt_template(dialeto, table_info, few_shot_examples, question):
     template = """
     Dada uma pergunta de entrada, primeiro crie uma consulta {dialeto} sintaticamente correta para ser executada, depois examine os resultados da consulta e retorne a resposta.
     Use o seguinte formato:
 
-    Pergunta: "Pergunta aqui"
-    SQLQuery: "Consulta SQL a ser executada"
-    SQLResult: "Resultado do SQLQuery"
-    Resposta: "Resposta final aqui"
-
+    SQLQuery: "Consulta SQL a ser executada ou resposta da pergunta."
+    
     Use apenas as tabelas a seguir:
 
     {table_info}.
@@ -121,14 +111,10 @@ def prompt_template(dialeto, table_info, few_shot_examples, input):
     Pergunta: {input}
     """
     prompt_template = PromptTemplate.from_template(template=template)
-    return prompt_template.format(dialeto=dialeto, table_info=table_info, few_shot_examples=few_shot_examples, input=input)
+    return prompt_template.format(dialeto=dialeto, table_info=table_info, few_shot_examples=few_shot_examples, input=question)
 
 
 if __name__ == "__main__":
     question = input("Digite a pergunta: ")
-    table_info = ['Projeto', 'Nota']
-    few_shot_examples = ['SELECT * FROM Projeto', 'SELECT * FROM Nota']
-    prompt = prompt_template('MS SQL Server', table_info,
-                             few_shot_examples, question)
-    query = generate_query_ai("geoex-sql-embeddings", prompt)
+    query = generate_query_ai("geoex-sql-embeddings", question)
     print(query)
