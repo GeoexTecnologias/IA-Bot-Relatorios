@@ -74,15 +74,23 @@ def generate_query_ai(index_name, question):
         return result
 
     result = result.split('SQLQuery:')[1]
+    # pegue somente o contenudo dentro das aspas duplas
+    result = result.split('"')[1]
     print(result)
-
     if validate_query(result):
-        if get_query(result):
-            return result
-        else:
-            return 'O relatorio não retornou resultados. Tente outra pergunta. ou pergunte de outra forma'
+        df = get_query(result)
+        return df
     else:
-        return result
+        return 'Não foi possível gerar o relatório. Tente outra pergunta. ou pergunte de outra forma'
+
+    # if validate_query(result):
+    #     if get_query(result):
+    #         df = get_query(result)
+    #         return df
+    #     else:
+    #         return 'O relatorio não retornou resultados. Tente outra pergunta. ou pergunte de outra forma'
+    # else:
+    #     return result
 
 
 def validate_query(query):
@@ -103,12 +111,9 @@ def get_query(query):
 
         df = pd.read_sql_query(query, conn)
         random_number = random.randint(0, 1000)
-        df.to_excel(
-            f"./outputs/relatorio_ia_{random_number}.xlsx", index=False)
         if len(df) > 0:
-            return True, df
-        return False, None
-
+            return df
+        return False
     except Exception as e:
         print(e)
 
@@ -139,6 +144,7 @@ def prompt_template(question):
     {few_shot_examples}
     
     Observações: 
+        - Seu nome é GeoAI
         - Em consultas com datas e que o usuário nao especificou o ano, use o ano atual.
         - Se o input do usuário for como uma conversa normal, seja educado e mais humano possível.
         - Caso o usuário nao entenda, explique para ele o que voce faz e quais dados do banco voce consegue consultar

@@ -1,5 +1,6 @@
 import streamlit as st
 from ai_model import generate_query_ai
+import pandas as pd
 st.title("Geoex AI")
 
 # Initialize chat history
@@ -11,17 +12,18 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# React to user input
 if prompt := st.chat_input("Como posso te ajudar?"):
-    # Display user message in chat message container
     st.chat_message("user").markdown(prompt)
-    # Add user message to chat history
     st.session_state.messages.append({"role": "user", "content": prompt})
 
     response = generate_query_ai("geoex-sql-embeddings", prompt)
-    # Display assistant response in chat message container
-    with st.chat_message("assistant"):
-        st.markdown(response)
-    # Add assistant response to chat history
+
+    if isinstance(response, pd.DataFrame):
+        with st.chat_message("assistant"):
+            st.dataframe(response)
+    else:
+        with st.chat_message("assistant"):
+            st.markdown(response)
+
     st.session_state.messages.append(
         {"role": "assistant", "content": response})
