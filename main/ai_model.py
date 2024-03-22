@@ -40,6 +40,8 @@ def generate_gpt4(index_name):
 
 
 def conversational_retriever_chain(index_name):
+    cache = SQLiteCache()
+    set_llm_cache(cache)
     pc = pinecone.Pinecone(api_key=os.environ['PINECONE_API_KEY'])
     print('index', index_name, 'selected!')
 
@@ -52,8 +54,6 @@ def conversational_retriever_chain(index_name):
         search_type='similarity', search_kwargs={'k': 5})
     memory = ConversationBufferMemory(
         memory_key='chat_history', return_messages=False)
-
-    # Conversational Retrieval Chain
 
     crc = ConversationalRetrievalChain.from_llm(
         llm=llm,
@@ -73,24 +73,17 @@ def generate_query_ai(index_name, question):
     if 'SQLQuery' not in result:
         return result
 
-    result = result.split('SQLQuery:')[1]
-    # pegue somente o contenudo dentro das aspas duplas
-    result = result.split('"')[1]
-    print(result)
-    if validate_query(result):
-        df = get_query(result)
-        return df
-    else:
+    try:
+        result = result.split('SQLQuery:')[1]
+        result = result.split('"')[1]
+        print(result)
+        if validate_query(result):
+            df = get_query(result)
+            return df
+        else:
+            return 'Não foi possível gerar o relatório. Tente outra pergunta. ou pergunte de outra forma'
+    except Exception as e:
         return 'Não foi possível gerar o relatório. Tente outra pergunta. ou pergunte de outra forma'
-
-    # if validate_query(result):
-    #     if get_query(result):
-    #         df = get_query(result)
-    #         return df
-    #     else:
-    #         return 'O relatorio não retornou resultados. Tente outra pergunta. ou pergunte de outra forma'
-    # else:
-    #     return result
 
 
 def validate_query(query):
@@ -110,12 +103,11 @@ def get_query(query):
         cursor.execute(query)
 
         df = pd.read_sql_query(query, conn)
-        random_number = random.randint(0, 1000)
         if len(df) > 0:
             return df
         return False
     except Exception as e:
-        print(e)
+        return 'Nao foi possível realizar a consulta. Tente novamente.'
 
 
 def connect_db():
@@ -148,19 +140,23 @@ def prompt_template(question):
         - Em consultas com datas e que o usuário nao especificou o ano, use o ano atual.
         - Se o input do usuário for como uma conversa normal, seja educado e mais humano possível.
         - Caso o usuário nao entenda, explique para ele o que voce faz e quais dados do banco voce consegue consultar
+        - Se o usuário pedir todos os dados de uma tabela, limite a quantidade de linhas retornadas para 2000.
+        - Se o usuário pedir todas as colunas de uma tabela peça para ele especificar quais colunas ele deseja.
+        - Usuários podem fazer perguntas sobre como você funciona, o que você faz, o que você consegue consultar, etc.
     Pergunta: {input}
     """
     dialect = 'MS SQL Server'
     cols = ['Projeto', 'Nota', 'ProjetoProgramacaoCarteira']
     few_shot_examples = """
     Pergunta: Quais projetos/obras estao programados para serem executados nas carteiras de maio até dezembro deste ano?
-    
     SQLQuery: SELECT Projeto.Titulo 
                 FROM Projeto 
                 INNER JOIN ProjetoProgramacaoCarteira 
                 ON Projeto.ProjetoId = ProjetoProgramacaoCarteira.ProjetoId 
                 WHERE ProjetoProgramacaoCarteira.Carteira BETWEEN CONVERT(date, CONVERT(varchar(4), YEAR(GETDATE())) + '-05-01') AND CONVERT(date, CONVERT(varchar(4), YEAR(GETDATE())) + '-12-31')
 
+    Pergunta: Quais sao as colunas da tabela Projeto?
+    SQLQuery: "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Projeto'"
     
     
     """,
