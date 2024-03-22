@@ -3,9 +3,7 @@ from ai_model import generate_query_ai
 import pandas as pd
 st.title("Geoex AI")
 
-# TODO: Add memory to the chat
-
-# Initialize chat history
+# TODO: Enviar mensagens para o modelo de IA (st.session_state.messages)
 if "messages" not in st.session_state:
     st.session_state.messages = []
 

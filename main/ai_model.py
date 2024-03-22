@@ -63,6 +63,8 @@ def conversational_retriever_chain(index_name):
     )
     return crc
 
+# TODO: Adicionar messages como parametro para manter a conversa
+
 
 def generate_query_ai(index_name, question):
 
