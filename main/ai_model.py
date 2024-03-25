@@ -2,17 +2,20 @@ from langchain.agents.agent_types import AgentType
 from langchain_openai import ChatOpenAI
 from langchain.prompts.chat import ChatPromptTemplate
 from langchain.cache import SQLiteCache
+from langchain.vectorstores import Chroma
 from langchain.globals import set_llm_cache
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
 from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
 import pinecone
+from langchain.llms import huggingface_hub
 from langchain_community.vectorstores import Pinecone
 from langchain.chains import RetrievalQA
 from langchain.prompts import PromptTemplate
 from dotenv import load_dotenv
 import os
+from langchain_community.llms import HuggingFaceEndpoint
 import pymssql
 import pandas as pd
 import random
@@ -20,40 +23,29 @@ from langchain_community.chat_message_histories import StreamlitChatMessageHisto
 load_dotenv()
 
 
-def generate_gpt4(index_name):
-    pc = pinecone.Pinecone(api_key=os.environ['PINECONE_API_KEY'])
-    print('index', index_name, 'selected!')
+def conversational_retriever_chain(index_name, vector_db):
 
-    embeddings = OpenAIEmbeddings()
-    vector_store = Pinecone.from_existing_index(
-        index_name=index_name, embedding=embeddings)
+    if vector_db == 'PC':
+        cache = SQLiteCache()
+        set_llm_cache(cache)
+        pc = pinecone.Pinecone(api_key=os.environ['PINECONE_API_KEY'])
+        print('index', index_name, 'selected!')
 
-    # llm = ChatOpenAI(model='gpt-4', temperature=0.3)
-    llm = ChatOpenAI(model='gpt-3.5-turbo', temperature=0.2)
+        embeddings = OpenAIEmbeddings(model='text-embedding-3-small')
+        vector_store = Pinecone.from_existing_index(
+            index_name=index_name, embedding=embeddings)
+
+    elif vector_db == 'CH':
+        persist_directory = '../embeddings/geoex-sql-embeddings-chroma'
+        embeddings = OpenAIEmbeddings(
+            model='text-embedding-3-small', dimensions=1536)
+        vector_store = Chroma(
+            persist_directory=persist_directory, embedding_function=embeddings)
+
+    llm = ChatOpenAI(model='gpt-4', temperature=0.1)
+
     retriever = vector_store.as_retriever(
-        search_type='similarity', search_kwargs={'k': 5})
-
-    memory = ConversationBufferMemory(
-        memory_key='chat_history', return_messages=True)
-    chain = RetrievalQA.from_chain_type(
-        llm=llm, chain_type='retrieval_qa', retriever=retriever)
-
-    return chain
-
-
-def conversational_retriever_chain(index_name):
-    cache = SQLiteCache()
-    set_llm_cache(cache)
-    pc = pinecone.Pinecone(api_key=os.environ['PINECONE_API_KEY'])
-    print('index', index_name, 'selected!')
-
-    embeddings = OpenAIEmbeddings()
-    vector_store = Pinecone.from_existing_index(
-        index_name=index_name, embedding=embeddings)
-
-    llm = ChatOpenAI(model='gpt-4', temperature=0)
-    retriever = vector_store.as_retriever(
-        search_type='similarity', search_kwargs={'k': 5})
+        search_type='similarity', search_kwargs={'k': 8})
     memory = ConversationBufferMemory(
         memory_key='chat_history', return_messages=False)
 
@@ -70,10 +62,10 @@ def conversational_retriever_chain(index_name):
 
 def generate_query_ai(index_name, question, chat_history):
 
-    chain = conversational_retriever_chain(index_name)
+    chain = conversational_retriever_chain(index_name, vector_db='CH')
     prompt = prompt_template(question, chat_history)
     result = chain.invoke(prompt)['answer']
-
+    # TODO: Criar um GPT 3.5 para gerar respostas que nao sejam consultas
     if 'SQLQuery' not in result:
         if 'Resposta:' in result:
             return result.split('Resposta:')[1]
@@ -129,18 +121,21 @@ def prompt_template(question, chat_history):
     template = """
     baseado nas mensagens anteriores {chat_history}
     
-    Dada uma pergunta de entrada, primeiro crie uma consulta {dialeto} sintaticamente correta para ser executada, depois examine os resultados da consulta e retorne a resposta sempre em portugues.
+    Dada uma pergunta de entrada, crie uma consulta {dialeto} sintaticamente correta para ser executada.
     Use o seguinte formato:
 
-    SQLQuery: "Consulta SQL a ser executada ou resposta da pergunta."
+    SQLQuery: "Consulta SQL a ser executada"
+    
     
     Use apenas as tabelas a seguir:
 
     {table_info}.
+    
 
     Alguns exemplos de consultas SQL que se enquadram em perguntas são:
 
     {few_shot_examples}
+    
     
     Observações: 
         - Seu nome é Geoex AI e voce é o assistente virtual do Geoex, voce é educado e muito divertido.
@@ -150,7 +145,7 @@ def prompt_template(question, chat_history):
         - Se o usuário pedir todos os dados de uma tabela, limite a quantidade de linhas retornadas para 2000.
         - Se o usuário pedir todas as colunas de uma tabela peça para ele especificar quais colunas ele deseja.
         - Usuários podem fazer perguntas sobre como você funciona, o que você faz, o que você consegue consultar, agradecer, e vc deve ser educado etc.
-        - Suas respostas devem ser em markdown quando nao forem consultas SQL.
+
     Pergunta: {input}
     """
     dialect = 'MS SQL Server'
@@ -166,7 +161,8 @@ def prompt_template(question, chat_history):
     Pergunta: Quais sao as colunas da tabela Projeto?
     SQLQuery: "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Projeto'"
     
-    
+    Pergunta: Como voce funciona:
+    Resposta: Eu sou um assistente virtual que pode te ajudar a encontrar informações dados do seu interesse!
     """,
     prompt_template = PromptTemplate.from_template(template=template)
     return prompt_template.format(chat_history=chat_history, dialeto=dialect, table_info=cols, few_shot_examples=few_shot_examples, input=question)

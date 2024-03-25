@@ -3,6 +3,7 @@ from sqlalchemy import inspect
 import pymssql
 from dotenv import load_dotenv
 import os
+from langchain.vectorstores import Chroma
 import pinecone
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
@@ -21,6 +22,9 @@ def connect_db():
 
 
 if __name__ == '__main__':
+    VECTOR_DBS = ['PC', 'CH']
+    vector_db = VECTOR_DBS[1]
+
     conn, uri = connect_db()
     engine = create_engine(uri)
     inspector = inspect(engine)
@@ -55,27 +59,35 @@ if __name__ == '__main__':
         db_schema = f.read()
     chunks = splitter.create_documents([db_schema])
 
-    embeddings = OpenAIEmbeddings()
+    embeddings = OpenAIEmbeddings(model='text-embedding-3-small',)
 
-    pc = pinecone.Pinecone()
+    if vector_db == 'PC':
+        pc = pinecone.Pinecone()
 
-    for i in pc.list_indexes().names():
-        print('Deletando indice ', i)
-        pc.delete_index(i)
+        for i in pc.list_indexes().names():
+            print('Deletando indice ', i)
+            pc.delete_index(i)
 
-    index_name = 'geoex-sql-embeddings'
-    if index_name not in pc.list_indexes().names():
-        print('Criando index', index_name)
-        pc.create_index(
-            name=index_name,
-            dimension=1536,
-            metric='cosine',
-            spec=pinecone.PodSpec(
-                environment='gcp-starter'
+        index_name = 'geoex-sql-embeddings'
+        if index_name not in pc.list_indexes().names():
+            print('Criando index', index_name)
+            pc.create_index(
+                name=index_name,
+                dimension=1536,
+                metric='cosine',
+                spec=pinecone.PodSpec(
+                    environment='gcp-starter'
+                )
+
             )
+            print('done')
 
-        )
+        vector_store = Pinecone.from_documents(
+            chunks, embeddings, index_name=index_name)
         print('done')
-
-    vector_store = Pinecone.from_documents(
-        chunks, embeddings, index_name=index_name)
+    elif vector_db == 'CH':
+        embeddings = OpenAIEmbeddings(
+            model='text-embedding-3-small', dimensions=1536)
+        persist_directory = './geoex-sql-embeddings-chroma'
+        vector_store = Chroma.from_documents(
+            chunks, embeddings, persist_directory=persist_directory)
