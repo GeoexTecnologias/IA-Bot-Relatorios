@@ -23,10 +23,20 @@ if prompt := st.chat_input("Como posso te ajudar?"):
         "geoex-sql-embeddings", prompt, st.session_state.messages)
 
     if isinstance(response, pd.DataFrame):
-        with st.chat_message("assistant", avatar='../assets/geo.png'):
+        with st.status("Buscando os dados..."):
+            st.write("Buscando dados...")
+            time.sleep(2)
+            st.write("Dados Encontrados.")
+            time.sleep(2)
+            st.write("Carregando seus dados...")
+            time.sleep(2)
+        with st.chat_message("assistant"):
             st.dataframe(response)
     else:
-        with st.chat_message("assistant", avatar='../assets/geo.png'):
+        with st.status("Pensando..."):
+            time.sleep(6)
+
+        with st.chat_message("assistant"):
             def stream_data():
                 for word in response.split(" "):
                     yield word + " "

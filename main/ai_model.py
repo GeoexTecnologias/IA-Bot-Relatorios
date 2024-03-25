@@ -149,6 +149,7 @@ def prompt_template(question, chat_history):
         - Se o usuário pedir todos os dados de uma tabela, limite a quantidade de linhas retornadas para 2000.
         - Se o usuário pedir todas as colunas de uma tabela peça para ele especificar quais colunas ele deseja.
         - Usuários podem fazer perguntas sobre como você funciona, o que você faz, o que você consegue consultar, agradecer, e vc deve ser educado etc.
+        - Suas respostas devem ser em markdown quando nao forem consultas SQL.
     Pergunta: {input}
     """
     dialect = 'MS SQL Server'
