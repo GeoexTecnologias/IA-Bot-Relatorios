@@ -4,11 +4,17 @@ import pandas as pd
 import time
 import numpy as np
 
-st.title("Geoex AI")
+with open("styles/style.css") as css:
+    st.markdown(f'<style>{css.read()}</style>', unsafe_allow_html=True)
+
+st.title('_Geoex_ :green[AI] 🧠')
 
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
+
+st.chat_message("assistant").markdown(
+    'Olá! Eu sou o _Geoex_ :green[AI], um assistente virtual que pode te ajudar a encontrar informações dados do seu interesse! Como posso te ajudar hoje?')
 
 # Display chat messages from history on app rerun
 for message in st.session_state.messages:

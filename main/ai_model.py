@@ -28,9 +28,10 @@ def generate_gpt4(index_name):
     vector_store = Pinecone.from_existing_index(
         index_name=index_name, embedding=embeddings)
 
-    llm = ChatOpenAI(model='gpt-4', temperature=0.3)
+    # llm = ChatOpenAI(model='gpt-4', temperature=0.3)
+    llm = ChatOpenAI(model='gpt-3.5-turbo', temperature=0.2)
     retriever = vector_store.as_retriever(
-        search_type='similarity', search_kwargs={'k': 10})
+        search_type='similarity', search_kwargs={'k': 5})
 
     memory = ConversationBufferMemory(
         memory_key='chat_history', return_messages=True)
@@ -142,7 +143,7 @@ def prompt_template(question, chat_history):
     {few_shot_examples}
     
     Observações: 
-        - Seu nome é GeoAI e voce é o assistente virtual do Geoex, voce é educado e muito divertido.
+        - Seu nome é Geoex AI e voce é o assistente virtual do Geoex, voce é educado e muito divertido.
         - Em consultas com datas e que o usuário nao especificou o ano, use o ano atual.
         - Se o input do usuário for como uma conversa normal, seja educado e mais humano possível.
         - Caso o usuário nao entenda, explique para ele o que voce faz e quais dados do banco voce consegue consultar
