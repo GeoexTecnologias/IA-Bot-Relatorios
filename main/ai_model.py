@@ -16,6 +16,7 @@ import os
 import pymssql
 import pandas as pd
 import random
+from langchain_community.chat_message_histories import StreamlitChatMessageHistory
 load_dotenv()
 
 
@@ -34,7 +35,7 @@ def generate_gpt4(index_name):
     memory = ConversationBufferMemory(
         memory_key='chat_history', return_messages=True)
     chain = RetrievalQA.from_chain_type(
-        llm=llm, chain_type='stuff', retriever=retriever)
+        llm=llm, chain_type='retrieval_qa', retriever=retriever)
 
     return chain
 
@@ -66,19 +67,20 @@ def conversational_retriever_chain(index_name):
 # TODO: Adicionar messages como parametro para manter a conversa
 
 
-def generate_query_ai(index_name, question):
+def generate_query_ai(index_name, question, chat_history):
 
     chain = conversational_retriever_chain(index_name)
-    prompt = prompt_template(question)
+    prompt = prompt_template(question, chat_history)
     result = chain.invoke(prompt)['answer']
 
     if 'SQLQuery' not in result:
+        if 'Resposta:' in result:
+            return result.split('Resposta:')[1]
         return result
 
     try:
         result = result.split('SQLQuery:')[1]
         result = result.split('"')[1]
-        print(result)
         if validate_query(result):
             df = get_query(result)
             return df
@@ -122,8 +124,10 @@ def connect_db():
     return pymssql.connect(server, username, password, database), uri
 
 
-def prompt_template(question):
+def prompt_template(question, chat_history):
     template = """
+    baseado nas mensagens anteriores {chat_history}
+    
     Dada uma pergunta de entrada, primeiro crie uma consulta {dialeto} sintaticamente correta para ser executada, depois examine os resultados da consulta e retorne a resposta sempre em portugues.
     Use o seguinte formato:
 
@@ -138,13 +142,13 @@ def prompt_template(question):
     {few_shot_examples}
     
     Observações: 
-        - Seu nome é GeoAI
+        - Seu nome é GeoAI e voce é o assistente virtual do Geoex, voce é educado e muito divertido.
         - Em consultas com datas e que o usuário nao especificou o ano, use o ano atual.
         - Se o input do usuário for como uma conversa normal, seja educado e mais humano possível.
         - Caso o usuário nao entenda, explique para ele o que voce faz e quais dados do banco voce consegue consultar
         - Se o usuário pedir todos os dados de uma tabela, limite a quantidade de linhas retornadas para 2000.
         - Se o usuário pedir todas as colunas de uma tabela peça para ele especificar quais colunas ele deseja.
-        - Usuários podem fazer perguntas sobre como você funciona, o que você faz, o que você consegue consultar, etc.
+        - Usuários podem fazer perguntas sobre como você funciona, o que você faz, o que você consegue consultar, agradecer, e vc deve ser educado etc.
     Pergunta: {input}
     """
     dialect = 'MS SQL Server'
@@ -163,7 +167,7 @@ def prompt_template(question):
     
     """,
     prompt_template = PromptTemplate.from_template(template=template)
-    return prompt_template.format(dialeto=dialect, table_info=cols, few_shot_examples=few_shot_examples, input=question)
+    return prompt_template.format(chat_history=chat_history, dialeto=dialect, table_info=cols, few_shot_examples=few_shot_examples, input=question)
 
 
 if __name__ == "__main__":
