@@ -23,6 +23,26 @@ from langchain_community.chat_message_histories import StreamlitChatMessageHisto
 load_dotenv()
 
 
+def is_query_result(prompt):
+    cols = ['Projeto', 'Nota', 'ProjetoProgramacaoCarteira']
+    prompt_template = """
+    Você é o ajudante de outro assistente virtual, que está tentando responder a perguntas de um usuário.
+    Seu papel é descobrir se a pergunta pode ser respondida com uma consulta SQL para as tabelas {cols}.
+    Suas respostas devem ser:
+    
+     - 1, se a pergunta puder ser respondida com uma consulta SQL.
+     
+     - tirar duvida do usuário caso a pergunta nao precise ser respondida com a consulta, sabendo que: voce é em um sistema chamdo Geoex AI
+    que gera relatorios de dados do sistema do Geoex e fale as colunas que pode consultar. Nao deixe claro que voce consulta um banco de dados e nem fale a palavra SQL
+    
+    Com base nas instruções responda: {prompt}
+    """
+    prompt_template = PromptTemplate.from_template(template=prompt_template)
+    input = prompt_template.format(cols=cols, prompt=prompt)
+    llm = ChatOpenAI(model='gpt-3.5-turbo', temperature=0.2)
+    return llm.invoke(input).content, prompt
+
+
 def conversational_retriever_chain(index_name, vector_db):
 
     if vector_db == 'PC':
@@ -57,30 +77,32 @@ def conversational_retriever_chain(index_name, vector_db):
     )
     return crc
 
-# TODO: Adicionar messages como parametro para manter a conversa
-
 
 def generate_query_ai(index_name, question, chat_history):
 
-    chain = conversational_retriever_chain(index_name, vector_db='CH')
-    prompt = prompt_template(question, chat_history)
-    result = chain.invoke(prompt)['answer']
     # TODO: Criar um GPT 3.5 para gerar respostas que nao sejam consultas
-    if 'SQLQuery' not in result:
-        if 'Resposta:' in result:
-            return result.split('Resposta:')[1]
-        return result
+    result, prompt = is_query_result(question)
 
-    try:
-        result = result.split('SQLQuery:')[1]
-        result = result.split('"')[1]
-        if validate_query(result):
-            df = get_query(result)
-            return df
-        else:
+    if result == '1':
+        chain = conversational_retriever_chain(index_name, vector_db='CH')
+        prompt = prompt_template(question, chat_history)
+        result = chain.invoke(prompt)['answer']
+        if 'SQLQuery' not in result:
+            if 'Resposta:' in result:
+                return result.split('Resposta:')[1]
+            return result
+
+        try:
+            result = result.split('SQLQuery:')[1]
+            result = result.split('"')[1]
+            if validate_query(result):
+                df = get_query(result)
+                return df
+            else:
+                return 'Não foi possível gerar o relatório. Tente outra pergunta. ou pergunte de outra forma'
+        except Exception as e:
             return 'Não foi possível gerar o relatório. Tente outra pergunta. ou pergunte de outra forma'
-    except Exception as e:
-        return 'Não foi possível gerar o relatório. Tente outra pergunta. ou pergunte de outra forma'
+    return result
 
 
 def validate_query(query):
@@ -166,13 +188,3 @@ def prompt_template(question, chat_history):
     """,
     prompt_template = PromptTemplate.from_template(template=template)
     return prompt_template.format(chat_history=chat_history, dialeto=dialect, table_info=cols, few_shot_examples=few_shot_examples, input=question)
-
-
-if __name__ == "__main__":
-    while True:
-        question = input("Digite a pergunta: ")
-        if question == 'tchau':
-            print('Estou aqui para ajudar! Até a próxima')
-            break
-        query = generate_query_ai("geoex-sql-embeddings", question)
-        print(query)
