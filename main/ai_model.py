@@ -23,23 +23,26 @@ from langchain_community.chat_message_histories import StreamlitChatMessageHisto
 load_dotenv()
 
 
-def is_query_result(prompt):
+def is_query_result(prompt, chat_history):
     cols = ['Projeto', 'Nota', 'ProjetoProgramacaoCarteira']
     prompt_template = """
+    
+    baseado no historico do chat: {chat_history}
+    
     Você é o ajudante de outro assistente virtual, que está tentando responder a perguntas de um usuário.
     Seu papel é descobrir se a pergunta pode ser respondida com uma consulta SQL para as tabelas {cols}.
     Suas respostas devem ser:
     
      - 1, se a pergunta puder ser respondida com uma consulta SQL.
      
-     - tirar duvida do usuário caso a pergunta nao precise ser respondida com a consulta, sabendo que: voce é em um sistema chamdo Geoex AI
-    que gera relatorios de dados do sistema do Geoex e fale as colunas que pode consultar. Nao deixe claro que voce consulta um banco de dados e nem fale a palavra SQL
+     - Responder o usuário de forma educada e humana, se a pergunta não puder ser respondida com uma consulta SQL.
     
     Com base nas instruções responda: {prompt}
     """
     prompt_template = PromptTemplate.from_template(template=prompt_template)
-    input = prompt_template.format(cols=cols, prompt=prompt)
-    llm = ChatOpenAI(model='gpt-3.5-turbo', temperature=0.2)
+    input = prompt_template.format(
+        cols=cols, prompt=prompt, chat_history=chat_history)
+    llm = ChatOpenAI(model='gpt-3.5-turbo', temperature=0.5)
     return llm.invoke(input).content, prompt
 
 
@@ -62,7 +65,7 @@ def conversational_retriever_chain(index_name, vector_db):
         vector_store = Chroma(
             persist_directory=persist_directory, embedding_function=embeddings)
 
-    llm = ChatOpenAI(model='gpt-4', temperature=0.1)
+    llm = ChatOpenAI(model='gpt-4-0125-preview', temperature=0.1)
 
     retriever = vector_store.as_retriever(
         search_type='similarity', search_kwargs={'k': 8})
@@ -80,10 +83,10 @@ def conversational_retriever_chain(index_name, vector_db):
 
 def generate_query_ai(index_name, question, chat_history):
 
-    # TODO: Criar um GPT 3.5 para gerar respostas que nao sejam consultas
-    result, prompt = is_query_result(question)
+    result, prompt = is_query_result(question, chat_history=chat_history)
 
     if result == '1':
+        print('is query')
         chain = conversational_retriever_chain(index_name, vector_db='CH')
         prompt = prompt_template(question, chat_history)
         result = chain.invoke(prompt)['answer']
@@ -102,6 +105,7 @@ def generate_query_ai(index_name, question, chat_history):
                 return 'Não foi possível gerar o relatório. Tente outra pergunta. ou pergunte de outra forma'
         except Exception as e:
             return 'Não foi possível gerar o relatório. Tente outra pergunta. ou pergunte de outra forma'
+    print('is not query')
     return result
 
 
@@ -160,15 +164,16 @@ def prompt_template(question, chat_history):
     
     
     Observações: 
-        - Seu nome é Geoex AI e voce é o assistente virtual do Geoex, voce é educado e muito divertido.
-        - Em consultas com datas e que o usuário nao especificou o ano, use o ano atual.
+        - Seu nome é Geoex AI e voce é o assistente virtual do Geoex
         - Se o input do usuário for como uma conversa normal, seja educado e mais humano possível.
         - Caso o usuário nao entenda, explique para ele o que voce faz e quais dados do banco voce consegue consultar
-        - Se o usuário pedir todos os dados de uma tabela, limite a quantidade de linhas retornadas para 2000.
         - Se o usuário pedir todas as colunas de uma tabela peça para ele especificar quais colunas ele deseja.
         - Usuários podem fazer perguntas sobre como você funciona, o que você faz, o que você consegue consultar, agradecer, e vc deve ser educado etc.
 
     Pergunta: {input}
+    
+    - Se o usuário nao especificou, use o ano atual.
+    
     """
     dialect = 'MS SQL Server'
     cols = ['Projeto', 'Nota', 'ProjetoProgramacaoCarteira']
