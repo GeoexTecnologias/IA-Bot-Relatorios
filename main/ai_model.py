@@ -33,9 +33,9 @@ def is_query_result(prompt, chat_history):
     Seu papel é descobrir se a pergunta pode ser respondida com uma consulta SQL para as tabelas {cols}.
     Suas respostas devem ser:
     
-     - 1, se a pergunta puder ser respondida com uma consulta SQL.
-     
-     - Responder o usuário de forma educada e humana, se a pergunta não puder ser respondida com uma consulta SQL.
+    - 1, se a pergunta puder ser respondida com uma consulta SQL.
+
+    - Responder o usuário de forma educada e humana, se a pergunta não puder ser respondida com uma consulta SQL.
     
     Com base nas instruções responda: {prompt}
     """
