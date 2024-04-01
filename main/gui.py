@@ -3,8 +3,9 @@ from ai_model import generate_query_ai
 import pandas as pd
 import time
 import numpy as np
-
-with open("styles/style.css") as css:
+debug_css_path = 'IA-Bot-Relatorios/main/styles/style.css'
+css_path = 'styles/style.css'
+with open(css_path) as css:
     st.markdown(f'<style>{css.read()}</style>', unsafe_allow_html=True)
 
 st.title('_Geoex_ :green[AI] 🧠')

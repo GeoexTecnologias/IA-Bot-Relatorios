@@ -23,31 +23,48 @@ from langchain_community.chat_message_histories import StreamlitChatMessageHisto
 load_dotenv()
 
 
-def is_query_result(prompt, chat_history):
-    cols = ['Projeto', 'Nota', 'ProjetoProgramacaoCarteira']
+def is_query_result(prompt, chat_history, cols):
     prompt_template = """
-    
     baseado no historico do chat: {chat_history}
     
-    Você é o ajudante de outro assistente virtual, que está tentando responder a perguntas de um usuário.
-    Seu papel é descobrir se a pergunta pode ser respondida com uma consulta SQL para as tabelas {cols}.
-    Suas respostas devem ser:
+    baseado nas colunas: {cols}, responda se a pergunta do usuário é possivel de 
+    ser respondida com uma consulta SQL.
     
-    - 1, se a pergunta puder ser respondida com uma consulta SQL.
+    Responda:
+    
+    - 1, se a pergunta do usuário for possivel de ser respondida com uma consulta SQL
+    - 0, se a pergunta do usuário não for possivel de ser respondida com uma consulta SQL
 
-    - Responder o usuário de forma educada e humana, se a pergunta não puder ser respondida com uma consulta SQL.
+    Com base nas instruções responda: {prompt}
+    """
+    prompt_template = PromptTemplate.from_template(template=prompt_template)
+    question = prompt_template.format(
+        cols=cols, prompt=prompt, chat_history=chat_history)
+    llm = ChatOpenAI(model='gpt-3.5-turbo', temperature=0.5)
+    return llm.invoke(question).content, prompt
+
+
+def answer_normal_question(prompt, chat_history, cols):
+    prompt_template = """
+    baseado no historico do chat: {chat_history}
+    Seu nome é Geoex AI e voce é o assistente virtual do Geoex, um assistente 
+    virtual que pode te ajudar a encontrar informações dados do seu interesse sobre {cols}! 
+    Como posso te ajudar hoje?
+
+    Instruções:
+    - Voce pode usar emojis
+    - Seja educado e bem humorado
     
     Com base nas instruções responda: {prompt}
     """
     prompt_template = PromptTemplate.from_template(template=prompt_template)
-    input = prompt_template.format(
+    question = prompt_template.format(
         cols=cols, prompt=prompt, chat_history=chat_history)
     llm = ChatOpenAI(model='gpt-3.5-turbo', temperature=0.5)
-    return llm.invoke(input).content, prompt
+    return llm.invoke(question).content, prompt
 
 
 def conversational_retriever_chain(index_name, vector_db):
-
     if vector_db == 'PC':
         cache = SQLiteCache()
         set_llm_cache(cache)
@@ -65,7 +82,7 @@ def conversational_retriever_chain(index_name, vector_db):
         vector_store = Chroma(
             persist_directory=persist_directory, embedding_function=embeddings)
 
-    llm = ChatOpenAI(model='gpt-4-0125-preview', temperature=0.1)
+    llm = ChatOpenAI(model='gpt-4-0125-preview', temperature=0.3)
 
     retriever = vector_store.as_retriever(
         search_type='similarity', search_kwargs={'k': 8})
@@ -82,11 +99,11 @@ def conversational_retriever_chain(index_name, vector_db):
 
 
 def generate_query_ai(index_name, question, chat_history):
-
-    result, prompt = is_query_result(question, chat_history=chat_history)
+    cols = ['Projeto', 'Nota', 'ProjetoProgramacaoCarteira']
+    result, prompt = is_query_result(
+        question, chat_history=chat_history, cols=cols)
 
     if result == '1':
-        print('is query')
         chain = conversational_retriever_chain(index_name, vector_db='CH')
         prompt = prompt_template(question, chat_history)
         result = chain.invoke(prompt)['answer']
@@ -105,8 +122,7 @@ def generate_query_ai(index_name, question, chat_history):
                 return 'Não foi possível gerar o relatório. Tente outra pergunta. ou pergunte de outra forma'
         except Exception as e:
             return 'Não foi possível gerar o relatório. Tente outra pergunta. ou pergunte de outra forma'
-    print('is not query')
-    return result
+    return answer_normal_question(question, chat_history, cols)
 
 
 def validate_query(query):
