@@ -6,4 +6,4 @@ ChatBot com IA para geração de relatórios do Geoex
 
 * [X] Conexão da API do ChatGPT
 * [X] Treinamento da IA em dados e metadados sobre o banco de dados do geoex
-* [ ] Seleção somente das tabelas relevantes e Criação dos Indexes no Pinecone
+* [X] Seleção somente das tabelas relevantes e Criação dos Indexes no Pinecone
