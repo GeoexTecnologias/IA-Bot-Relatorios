@@ -77,6 +77,5 @@ if __name__ == '__main__':
     }
 
     prompt = llm.define_prompt_template(template, template_args)
-    print(prompt)
     response = llm.invoke(prompt)
     print(response)
