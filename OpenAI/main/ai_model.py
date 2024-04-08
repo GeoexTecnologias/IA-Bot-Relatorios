@@ -15,6 +15,7 @@ from langchain.chains import RetrievalQA
 from langchain.prompts import PromptTemplate
 from dotenv import load_dotenv
 import os
+from langchain_community.llms import Ollama
 from langchain_community.llms import HuggingFaceEndpoint
 import pymssql
 import pandas as pd
@@ -82,7 +83,8 @@ def conversational_retriever_chain(index_name, vector_db):
         vector_store = Chroma(
             persist_directory=persist_directory, embedding_function=embeddings)
 
-    llm = ChatOpenAI(model='gpt-4-0125-preview', temperature=0.3)
+    # llm = ChatOpenAI(model='gpt-4-0125-preview', temperature=0.3)
+    llm = ChatOpenAI(model='gpt-3.5-turbo', temperature=0.2)
 
     retriever = vector_store.as_retriever(
         search_type='similarity', search_kwargs={'k': 8})
@@ -104,7 +106,7 @@ def generate_query_ai(index_name, question, chat_history):
         question, chat_history=chat_history, cols=cols)
 
     if result == '1':
-        chain = conversational_retriever_chain(index_name, vector_db='CH')
+        chain = conversational_retriever_chain(index_name, vector_db='PC')
         prompt = prompt_template(question, chat_history)
         result = chain.invoke(prompt)['answer']
         if 'SQLQuery' not in result:
