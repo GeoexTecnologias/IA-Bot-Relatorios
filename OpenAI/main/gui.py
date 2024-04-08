@@ -42,12 +42,6 @@ if prompt := st.chat_input("Como posso te ajudar?"):
     else:
         with st.status("Pensando..."):
             time.sleep(6)
-
-        with st.chat_message("assistant"):
-            def stream_data():
-                for word in response.split(" "):
-                    yield word + " "
-                    time.sleep(0.02)
-            st.write_stream(stream_data)
+        st.chat_message("assistant").markdown(response)
     st.session_state.messages.append(
         {"role": "assistant", "content": response})
