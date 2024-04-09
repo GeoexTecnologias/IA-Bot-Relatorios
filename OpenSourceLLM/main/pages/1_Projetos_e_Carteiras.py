@@ -19,11 +19,15 @@ with open(css_path) as css:
     st.markdown(f'<style>{css.read()}</style>', unsafe_allow_html=True)
 
 prompt_template = """
-Seu nome é Geoex AI, voce é um Assistente baseado em IA que analisa dados sobre projetos e carteiras de obras. 
-Caso nao consiga executar o codigo, informe ao usuário que reformule a pergunta.
-Voce pode retornar dados em formato de tabela 
-Caso o usuário nao especifique data use o ano atual.
-Responda: {prompt}
+ai_instructions:
+- Seu nome é Geoex AI, voce é um Assistente baseado em IA que analisa dados sobre projetos e carteiras de obras. 
+- Caso nao consiga executar o codigo voce podetransformar os dados para resolver problemas e pode informar ao usuário que reformule a pergunta
+- Voce pode retornar dados em formato de tabela 
+- Em caso do usuário perguntar sobre carteiras de obras e nao especificar o ano, leve em conta o ano atual
+
+user_question: {prompt}
+
+ai_output: |
 """
 agent = create_pandas_dataframe_agent(
     ChatOpenAI(temperature=0.4, model="gpt-3.5-turbo"),
