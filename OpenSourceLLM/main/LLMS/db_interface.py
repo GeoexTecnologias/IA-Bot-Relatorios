@@ -25,7 +25,7 @@ class DBInterface:
         return False
 
     def projetos_carteiras(self):
-        proj_join_ppc_query = """SELECT p.ProjetoId,p.Titulo,p.DataCriacao,p.OrgaoExecutor,ppc.Carteira,ppc.Previsao FROM Projeto p
+        proj_join_ppc_query = """SELECT p.ProjetoId,p.Titulo,p.OrgaoExecutor,ppc.Carteira,ppc.Previsao FROM Projeto p
         right join ProjetoProgramacaoCarteira ppc
         on p.ProjetoId = ppc.ProjetoId
         WHERE YEAR(ppc.Carteira) >= YEAR(GETDATE())
