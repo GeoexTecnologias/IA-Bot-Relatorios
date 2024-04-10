@@ -22,13 +22,18 @@ def query(query):
     cursor.execute(query)
     df = pd.read_sql_query(query, conn)
     if len(df) > 0:
+        df.to_csv('./pages/projetos.csv', index=False)
         return df
     return False
 
 
 def projetos_carteiras():
-    return query("""
-            SELECT ppc.Carteira,ppc.previsao,ppc.ProjetoId,pct.Nome Criterio
-                FROM ProjetoProgramacaoCarteira ppc
-                RIGHT JOIN ProgramacaoCarteiraTipo pct ON ppc.ProgramacaoCarteiraCriterioId = ppc.ProgramacaoCarteiraCriterioId
-            """)
+
+    proj_join_ppc_query = """SELECT p.ProjetoId,p.Titulo,p.DataCriacao,p.OrgaoExecutor,ppc.Carteira,ppc.Previsao FROM Projeto p
+    right join ProjetoProgramacaoCarteira ppc
+    on p.ProjetoId = ppc.ProjetoId
+    WHERE YEAR(ppc.Carteira) >= YEAR(GETDATE())
+    AND YEAR(ppc.Carteira) <= YEAR(GETDATE()) + 1
+    ORDER BY ppc.Carteira ASC"""
+
+    return query(proj_join_ppc_query)
