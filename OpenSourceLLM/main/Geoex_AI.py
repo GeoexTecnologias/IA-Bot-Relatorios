@@ -25,6 +25,6 @@ st.markdown(
     - **Projetos e Carteiras**: Consulte informações sobre Projetos e Carteiras de obras
     - **Coming Soon**: Novas ferramentas de IA em breve!
     
-    Esse projeto é uma iniciativa do time do Geoex para facilitar o acesso a informações de forma rapida, eficiente e descomplicada.
+    Esse projeto é uma iniciativa do time do Geoex para facilitar o acesso a informações de forma rapida, eficiente e descomplicada ;)
 """
 )
