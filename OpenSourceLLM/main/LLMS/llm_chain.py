@@ -4,6 +4,7 @@ import pandas as pd
 from dotenv import load_dotenv
 import os
 import sys
+from langchain.agents import Tool, AgentExecutor, initialize_agent, create_react_agent
 from langchain_openai import ChatOpenAI, OpenAI
 from langchain_experimental.agents.agent_toolkits import create_csv_agent, create_pandas_dataframe_agent
 from langchain.agents.agent_types import AgentType
@@ -35,10 +36,28 @@ projetos_data_tool = create_pandas_dataframe_agent(
     verbose=True,
     agent_type=AgentType.OPENAI_FUNCTIONS,
 )
+projetos_data_tool = Tool(
+    name="projetos_data",
+    func=projetos_data_tool.run,
+    description='Util quando o usuário faz uma pergunta sobre os dados de projetos e carteiras de obras',
+)
+
+llm = ChatOpenAI(model='gpt-3.5-turbo', temperature=0)
+tools = [projetos_data_tool]
+
+agent = create_react_agent(llm, tools, prompt_template)
+
+agent_executor = AgentExecutor(
+    agent=agent,
+    tools=tools,
+    verbose=True,
+    handle_parsing_error=True,
+    max_iterations=10
+)
 
 if __name__ == '__main__':
     prompt = str(input("Digite a pergunta: "))
 
-    response = projetos_data_tool.run(
-        prompt_template.format(prompt=prompt)
+    response = agent_executor.invoke(
+        {'prompt': prompt}
     )

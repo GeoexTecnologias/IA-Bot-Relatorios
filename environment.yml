@@ -120,6 +120,8 @@ dependencies:
       - flatbuffers==24.3.7
       - frozenlist==1.4.1
       - fsspec==2024.2.0
+      - geographiclib==2.0
+      - geopy==2.4.1
       - gitdb==4.0.11
       - gitpython==3.1.42
       - google-auth==2.29.0
