@@ -3,6 +3,9 @@ from langchain_openai import ChatOpenAI
 from langchain.prompts.chat import ChatPromptTemplate
 from langchain.cache import SQLiteCache
 from langchain.vectorstores import Chroma
+from langchain_community.llms import LlamaCpp
+from langchain_core.callbacks import CallbackManager, StreamingStdOutCallbackHandler
+from langchain_core.prompts import PromptTemplate
 from langchain.globals import set_llm_cache
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
@@ -14,7 +17,6 @@ from langchain_community.vectorstores import Pinecone
 from langchain.chains import RetrievalQA
 from langchain.prompts import PromptTemplate
 from dotenv import load_dotenv
-import os
 from langchain_community.llms import Ollama
 from langchain_community.llms import HuggingFaceEndpoint
 import pymssql
@@ -25,6 +27,7 @@ load_dotenv()
 
 
 def is_query_result(prompt, chat_history, cols):
+    callback_manager = CallbackManager([StreamingStdOutCallbackHandler()])
     prompt_template = """
     baseado no historico do chat: {chat_history}
     
@@ -41,11 +44,22 @@ def is_query_result(prompt, chat_history, cols):
     prompt_template = PromptTemplate.from_template(template=prompt_template)
     question = prompt_template.format(
         cols=cols, prompt=prompt, chat_history=chat_history)
-    llm = ChatOpenAI(model='gpt-3.5-turbo', temperature=0.5)
-    return llm.invoke(question).content, prompt
+    # llm = ChatOpenAI(model='gpt-3.5-turbo', temperature=0.5)
+    llm = LlamaCpp(
+        model_path="./models/mistral-7b-instruct-v0.1.Q2_K.gguf",
+        temperature=0.1,
+        max_tokens=500,
+        n_gpu_layers=-1,
+        top_p=1,
+        callback_manager=callback_manager,
+        verbose=False,  # Verbose is required to pass to the callback manager
+    )
+    # return llm.invoke(question).content, prompt
+    return llm.invoke(question), prompt
 
 
 def answer_normal_question(prompt, chat_history, cols):
+    callback_manager = CallbackManager([StreamingStdOutCallbackHandler()])
     prompt_template = """
     baseado no historico do chat: {chat_history}
     Seu nome é Geoex AI e voce é o assistente virtual do Geoex, um assistente 
@@ -61,8 +75,18 @@ def answer_normal_question(prompt, chat_history, cols):
     prompt_template = PromptTemplate.from_template(template=prompt_template)
     question = prompt_template.format(
         cols=cols, prompt=prompt, chat_history=chat_history)
-    llm = ChatOpenAI(model='gpt-3.5-turbo', temperature=0.5)
-    return llm.invoke(question).content, prompt
+    # llm = ChatOpenAI(model='gpt-3.5-turbo', temperature=0.5)
+    llm = LlamaCpp(
+        model_path="./models/mistral-7b-instruct-v0.1.Q2_K.gguf",
+        temperature=0.5,
+        max_tokens=500,
+        n_gpu_layers=-1,
+        top_p=1,
+        callback_manager=callback_manager,
+        verbose=False,  # Verbose is required to pass to the callback manager
+    )
+    # return llm.invoke(question).content, prompt
+    return llm.invoke(question), prompt
 
 
 def conversational_retriever_chain(index_name, vector_db):
@@ -83,9 +107,17 @@ def conversational_retriever_chain(index_name, vector_db):
         vector_store = Chroma(
             persist_directory=persist_directory, embedding_function=embeddings)
 
-    # llm = ChatOpenAI(model='gpt-4-0125-preview', temperature=0.3)
-    llm = ChatOpenAI(model='gpt-3.5-turbo', temperature=0.2)
-
+    # llm = ChatOpenAI(model='gpt-3.5-turbo', temperature=0.2)
+    callback_manager = CallbackManager([StreamingStdOutCallbackHandler()])
+    llm = LlamaCpp(
+        model_path="./models/mistral-7b-instruct-v0.1.Q2_K.gguf",
+        temperature=0.1,
+        max_tokens=500,
+        n_gpu_layers=-1,
+        top_p=1,
+        callback_manager=callback_manager,
+        verbose=False,  # Verbose is required to pass to the callback manager
+    )
     retriever = vector_store.as_retriever(
         search_type='similarity', search_kwargs={'k': 8})
     memory = ConversationBufferMemory(

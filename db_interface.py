@@ -24,20 +24,5 @@ class DBInterface:
             return df
         return False
 
-    def projetos_carteiras(self):
-        proj_join_ppc_query = """SELECT p.ProjetoId,p.Titulo,p.OrgaoExecutor,ppc.Carteira,ppc.Previsao FROM Projeto p
-        right join ProjetoProgramacaoCarteira ppc
-        on p.ProjetoId = ppc.ProjetoId
-        WHERE YEAR(ppc.Carteira) >= YEAR(GETDATE())
-        AND YEAR(ppc.Carteira) <= YEAR(GETDATE()) + 1
-        ORDER BY ppc.Carteira ASC"""
-
-        file_name = 'projetos'
-        df = self.query(proj_join_ppc_query, 'projetos')
-        df['Carteira'] = pd.to_datetime(df['Carteira'])
-        df.to_csv(f'llm-data/{file_name}.csv', index=False)
-
-        return df
-
     def close(self):
         self.conn.close()

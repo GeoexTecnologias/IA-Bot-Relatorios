@@ -10,7 +10,6 @@ with open(css_path) as css:
 
 st.title('_Geoex_ :green[AI] 🧠')
 
-
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
