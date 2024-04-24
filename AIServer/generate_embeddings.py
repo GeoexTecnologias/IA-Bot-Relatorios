@@ -43,7 +43,7 @@ if __name__ == '__main__':
             f.write('\n')
             print(f'Escrevendo {tabela} no arquivo')
 
-    db_schema = open('./rag_data/db_schema.txt'', 'r')
+    db_schema = open('./rag_data/db_schema.txt', 'r')
     tokens = 0
     for line in db_schema:
         tokens += len(line.split())
