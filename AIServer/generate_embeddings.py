@@ -8,6 +8,7 @@ import pinecone
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import Pinecone
+import pyodbc
 load_dotenv()
 
 
@@ -55,7 +56,7 @@ if __name__ == '__main__':
         length_function=len
     )
 
-    with open('./rag_data/db_schema.txt'') as f:
+    with open('./rag_data/db_schema.txt') as f:
         db_schema = f.read()
     chunks = splitter.create_documents([db_schema])
 
