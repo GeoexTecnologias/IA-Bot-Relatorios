@@ -52,18 +52,15 @@ if __name__ == "__main__":
     vector_db = VECTOR_DBS[1]
 
     conn, uri = connect_db()
-    print("conectado")
     engine = create_engine(uri)
-    print("engine criada")
     inspector = inspect(engine)
     tabelas = inspector.get_table_names()
-    print(tabelas[0:5])
 
     col_to_use = ["Projeto", "Nota", "ProjetoProgramacaoCarteira"]
 
     tabelas = [tabela for tabela in tabelas if tabela in col_to_use]
 
-    with open("./rag_data/db_schema.txt", "w") as f:
+    with open("./rag_data/db_schema_proj_projprogcart.txt", "w") as f:
         for tabela in tabelas:
             f.write(f"table {tabela} cols: ")
             for coluna in inspector.get_columns(tabela):
