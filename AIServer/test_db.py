@@ -116,8 +116,6 @@ if __name__ == "__main__":
     )
     print("embeddings armazenados")
 
-    db_instruct_embedd = load_embeddings(
+    vector_store = load_embeddings(
         store_name="instructEmbeddings", path=embedding_store_path
     )
-
-    db_instruct_embedd = FAISS.from_documents(chunks, instructor_embeddings)
