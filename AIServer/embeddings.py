@@ -1,19 +1,28 @@
 import pypyodbc as odbc
 import os
+
 import pymssql
+
 from dotenv import load_dotenv
+
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+
 from InstructorEmbedding import INSTRUCTOR
+
 import pickle
 import faiss
+
 from langchain.vectorstores import FAISS
+
 from langchain.embeddings import HuggingFaceInstructEmbeddings
+
 from langchain_community.embeddings import HuggingFaceEmbeddings
+
 
 load_dotenv()
 
 
-def connect_with_pymssql():
+def connect_database():
 
     server = os.environ["SERVER"]
 
@@ -29,18 +38,21 @@ def connect_with_pymssql():
     return conn, cursor
 
 
-def get_column_names_and_types(tables: list):
+def get_columns_dtypes(tables: list):
 
-    conn, cursor = connect_with_pymssql()
+    conn, cursor = connect_database()
 
     for table in tables:
 
         cursor.execute(
             f"""
 
+
             SELECT COLUMN_NAME, DATA_TYPE
 
+
             FROM INFORMATION_SCHEMA.COLUMNS
+
 
             WHERE TABLE_NAME = '{table}'
         """
@@ -49,16 +61,20 @@ def get_column_names_and_types(tables: list):
         rows = cursor.fetchall()
 
         with open("./rag_data/db_schema_projeto_carteira.txt", "a") as f:
+
             f.write(f"Table: {table} - Columns:")
+
             for row in rows:
+
                 f.write(f"({row[0]} {row[1]})")
+
             f.write("\n")
     conn.close()
 
 
 def generate_chunks(tables: list):
 
-    get_column_names_and_types(tables=tables)
+    get_columns_dtypes(tables=tables)
 
     db_schema = open("./rag_data/db_schema_projeto_carteira.txt", "r")
 
@@ -68,7 +84,7 @@ def generate_chunks(tables: list):
 
         tokens += len(line.split())
 
-    print(tokens)
+    print("Tokens:", tokens)
 
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=150, chunk_overlap=0, length_function=len
@@ -101,9 +117,13 @@ def load_embeddings(store_name, path):
 
 
 if __name__ == "__main__":
+
     load_dotenv()
+
     tables = ["Projeto", "ProjetoProgramacaoCarteira"]
+
     chunks = generate_chunks(tables)
+
     instructor_embeddings = HuggingFaceEmbeddings()
 
     embedding_store_path = "./embeddings"
@@ -114,7 +134,8 @@ if __name__ == "__main__":
         store_name="instructEmbeddings",
         path=embedding_store_path,
     )
-    print("embeddings armazenados")
+
+    print("Embeddings armazenados")
 
     vector_store = load_embeddings(
         store_name="instructEmbeddings", path=embedding_store_path

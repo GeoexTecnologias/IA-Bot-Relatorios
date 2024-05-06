@@ -1,3 +1,5 @@
 lamma.cpp
 .env
 embeddings
+dataframes
+__pycache__
