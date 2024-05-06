@@ -1,48 +1,34 @@
 from openai import OpenAI
+from langchain_openai import ChatOpenAI
+from langchain.agents.agent_types import AgentType
 from langchain_community.llms import LlamaCpp
 from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
+from langchain_experimental.agents.agent_toolkits import create_pandas_dataframe_agent
 from langchain_core.callbacks import CallbackManager, StreamingStdOutCallbackHandler
 from langchain_core.prompts import PromptTemplate
-from embeddings import load_embeddings
+from dataframes import projeto_carteira
+from dotenv import load_dotenv
 
-# /TheBloke/Mistral-7B-Instruct-v0.1-GGUF/blob/main/mistral-7b-instruct-v0.1.Q4_K_M.gguf
+load_dotenv()
 
+callback_manager = CallbackManager([StreamingStdOutCallbackHandler()])
 
-# conversational RAG
-def rag_chain(store_name):
-    vector_store = load_embeddings(store_name=store_name, path="./embeddings")
+# llm = LlamaCpp(
+#     model_path="./models/mistral-7b-instruct-v0.1.Q4_K_M.gguf",
+#     temperature=0.1,
+#     max_tokens=200,
+#     n_gpu_layers=-1,
+#     top_p=1,
+#     verbose=False,
+#     n_ctx=2048,
+# )
 
-    callback_manager = CallbackManager([StreamingStdOutCallbackHandler()])
-
-    llm = LlamaCpp(
-        model_path="./models/mistral-7b-instruct-v0.1.Q4_K_M.gguf",
-        temperature=0.1,
-        max_tokens=200,
-        n_gpu_layers=-1,
-        top_p=1,
-        callback_manager=callback_manager,
-        verbose=True,
-    )
-    print("LLM loaded")
-
-    retriever = vector_store.as_retriever(
-        search_type="similarity", search_kwargs={"k": 2}
-    )
-    print("Retriever loaded")
-
-    memory = ConversationBufferMemory(memory_key="chat_history", return_messages=False)
-
-    crc = ConversationalRetrievalChain.from_llm(
-        llm=llm, retriever=retriever, memory=memory, chain_type="stuff"
-    )
-    print("CRC loaded")
-
-    return crc
+llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.5)
 
 
-if __name__ == "__main__":
-    crc = rag_chain("instructEmbeddings")
-    prompt = "Hi, how are you?"
-    print(f"Invoking CRC with prompt: {prompt}")
-    result = crc.invoke({"question": prompt})
+df_agent = create_pandas_dataframe_agent(llm, projeto_carteira(), verbose=True)
+
+prompt = str(input("Digite sua pergunta: "))
+resp = df_agent.invoke(prompt)
+print(resp)

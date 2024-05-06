@@ -1,4 +1,5 @@
 from db_interface import DBInterface
+import pandas as pd
 
 
 def projeto_carteira():
@@ -36,6 +37,7 @@ def projeto_carteira():
     ORDER BY ppc.Carteira ASC;
     """
     df = db.query(query, "projeto_carteira")
+    df["Carteira de Obras"] = pd.to_datetime(df["Carteira de Obras"])
     db.close()
     return df
 
