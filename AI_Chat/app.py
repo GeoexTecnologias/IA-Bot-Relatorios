@@ -13,19 +13,29 @@ from langchain_community.vectorstores import Chroma
 from dotenv import load_dotenv
 from dataframes import store_column_data_types_to_file
 from db_interface import DBInterface
+import pandas as pd
 
 load_dotenv()
 
 
 def validate_query(query):
-    query = query.split("SQLQuery:")[1]
+
     try:
+
+        if "SQLQuery:" in query:
+            query = query.split("SQLQuery:")[1]
+        elif "SELECT" in query:
+            query = query
+
         conn = DBInterface().conn
         conn.cursor().execute(query)
-        return True
+
+        df = pd.read_sql_query(query, conn)
+
+        return True, df
     except Exception as e:
-        print(e)
-        return False
+
+        return False, query
 
 
 def embedding(tables_names: list[str], file_name: str):
@@ -76,8 +86,10 @@ def conversational_retriever_chain(persist_directory: str):
 
 def prompt_template(question: str):
     prompt_template = f"""
-    Baseado nos dados fornecidos, construa uma consulta SQL
-    construa uma consulta sql que resposta a seguinte pergunta:
+    
+    Baseado nos dados fornecidos, construa uma consulta SQL usando somente as colunas e tabelas que conhece.
+    
+    Construa uma consulta sql que resposta a seguinte pergunta:
     
     Pergunta: Quantos projetos estao na carteira de obras de maio até dezembro de 2024?
     
@@ -91,7 +103,6 @@ def prompt_template(question: str):
     Pergunta: {question}
     
     SQLQuery:
-    
     """
     return prompt_template
 
@@ -107,8 +118,18 @@ if __name__ == "__main__":
     # TODO: descomentar caso mude o tablenames embedding(tables_names=table_names, file_name=file_name)
     persist_directory = "./embeddings"
     crc = conversational_retriever_chain(persist_directory=persist_directory)
-    prompt_template = prompt_template(
-        "Qual a media da quantidade de projetos nas carteiras de obras de 2024?"
-    )
-    resp = crc.invoke(prompt_template)["answer"]
-    print(validate_query(resp))
+
+    user_question = str(input("Digite a pergunta: "))
+
+    prompt_template = prompt_template(user_question)
+
+    model_response = crc.invoke(prompt_template)["answer"]
+    print(model_response)
+    is_valid, response = validate_query(model_response)
+
+    if is_valid:
+        print(response.head())
+        response.to_csv("./testes/query_result.csv", index=False)
+    else:
+        print("else response")
+        print(response)
