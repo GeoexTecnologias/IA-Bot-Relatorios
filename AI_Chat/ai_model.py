@@ -72,7 +72,7 @@ def conversational_retriever_chain(persist_directory: str):
     vector_store = Chroma(
         persist_directory=persist_directory, embedding_function=embeddings
     )
-    llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.4)
+    llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0.4)
     retriever = vector_store.as_retriever(
         search_type="similarity", search_kwargs={"k": 8}
     )
@@ -133,9 +133,9 @@ def generate_response(user_question: str):
         return model_response
 
 
-# if __name__ == "__main__":
-#     user_question = (
-#         "Quantos os projetos estao programados para a carteira de obras de maio"
-#     )
-#     response = generate_response(user_question)
-#     print(response)
+if __name__ == "__main__":
+    user_question = (
+        "Quantos os projetos estao programados para a carteira de obras de maio"
+    )
+    response = generate_response(user_question)
+    print(response)
