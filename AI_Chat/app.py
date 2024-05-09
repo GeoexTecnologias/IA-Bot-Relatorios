@@ -26,7 +26,6 @@ def generate_response_api(item: Item = Body(...)):
 @app.get("/send-report")
 def send_report():
 
-    # open the file in binary mode
     with open("Report.csv", "rb") as file:
         data = file.read()
 
