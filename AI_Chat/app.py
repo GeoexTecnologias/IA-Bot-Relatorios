@@ -107,7 +107,7 @@ def prompt_template(question: str):
     return prompt_template
 
 
-if __name__ == "__main__":
+def generate_response(user_question: str):
     table_names = [
         "Projeto",
         "ProjetoProgramacaoCarteira",
@@ -115,21 +115,50 @@ if __name__ == "__main__":
     ]
 
     file_name = "tables.txt"
-    # TODO: descomentar caso mude o tablenames embedding(tables_names=table_names, file_name=file_name)
+
+    # TODO: descomentar caso mude o table_names embedding(tables_names=table_names, file_name=file_name)
     persist_directory = "./embeddings"
     crc = conversational_retriever_chain(persist_directory=persist_directory)
 
-    user_question = str(input("Digite a pergunta: "))
+    formated_question = prompt_template(user_question)
 
-    prompt_template = prompt_template(user_question)
+    model_response = crc.invoke(formated_question)["answer"]
 
-    model_response = crc.invoke(prompt_template)["answer"]
-    print(model_response)
     is_valid, response = validate_query(model_response)
 
     if is_valid:
-        print(response.head())
-        response.to_csv("./testes/query_result.csv", index=False)
+        return response
     else:
-        print("else response")
-        print(response)
+        return model_response
+
+
+if __name__ == "__main__":
+    # table_names = [
+    #     "Projeto",
+    #     "ProjetoProgramacaoCarteira",
+    #     "ProjetoProgramacaoBoletimProdutividade",
+    # ]
+
+    # file_name = "tables.txt"
+    # # TODO: descomentar caso mude o table_names embedding(tables_names=table_names, file_name=file_name)
+    # persist_directory = "./embeddings"
+    # crc = conversational_retriever_chain(persist_directory=persist_directory)
+
+    # user_question = str(input("Digite a pergunta: "))
+
+    # prompt_template = prompt_template(user_question)
+
+    # model_response = crc.invoke(prompt_template)["answer"]
+    # print(model_response)
+    # is_valid, response = validate_query(model_response)
+
+    # if is_valid:
+    #     print(response.head())
+    #     response.to_csv("./testes/query_result.csv", index=False)
+    # else:
+    #     print("else response")
+    #     print(response)
+
+    user_question = str(input("Digite a pergunta: "))
+    response = generate_response(user_question)
+    print(response)
