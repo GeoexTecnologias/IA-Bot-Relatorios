@@ -107,6 +107,7 @@ def prompt_template(question: str):
     return prompt_template
 
 
+# metodo da API
 def generate_response(user_question: str):
     table_names = [
         "Projeto",
@@ -130,9 +131,3 @@ def generate_response(user_question: str):
         return response
     else:
         return model_response
-
-
-if __name__ == "__main__":
-    user_question = str(input("Digite a pergunta: "))
-    response = generate_response(user_question)
-    print(response)
