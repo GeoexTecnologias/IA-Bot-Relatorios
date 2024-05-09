@@ -133,32 +133,6 @@ def generate_response(user_question: str):
 
 
 if __name__ == "__main__":
-    # table_names = [
-    #     "Projeto",
-    #     "ProjetoProgramacaoCarteira",
-    #     "ProjetoProgramacaoBoletimProdutividade",
-    # ]
-
-    # file_name = "tables.txt"
-    # # TODO: descomentar caso mude o table_names embedding(tables_names=table_names, file_name=file_name)
-    # persist_directory = "./embeddings"
-    # crc = conversational_retriever_chain(persist_directory=persist_directory)
-
-    # user_question = str(input("Digite a pergunta: "))
-
-    # prompt_template = prompt_template(user_question)
-
-    # model_response = crc.invoke(prompt_template)["answer"]
-    # print(model_response)
-    # is_valid, response = validate_query(model_response)
-
-    # if is_valid:
-    #     print(response.head())
-    #     response.to_csv("./testes/query_result.csv", index=False)
-    # else:
-    #     print("else response")
-    #     print(response)
-
     user_question = str(input("Digite a pergunta: "))
     response = generate_response(user_question)
     print(response)
