@@ -131,3 +131,11 @@ def generate_response(user_question: str):
         return response
     else:
         return model_response
+
+
+# if __name__ == "__main__":
+#     user_question = (
+#         "Quantos os projetos estao programados para a carteira de obras de maio"
+#     )
+#     response = generate_response(user_question)
+#     print(response)
