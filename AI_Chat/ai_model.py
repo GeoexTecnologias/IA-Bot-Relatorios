@@ -98,8 +98,6 @@ def prompt_template(question: str):
                 JOIN ProjetoProgramacaoCarteira ppc ON ppc.ProjetoId = p.ProjetoId
                 WHERE MONTH(ppc.Carteira) BETWEEN 5 AND 12
                 AND YEAR(ppc.Carteira) = 2024;
-                
-    
     Pergunta: {question}
     
     SQLQuery:

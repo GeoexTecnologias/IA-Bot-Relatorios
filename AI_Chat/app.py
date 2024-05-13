@@ -23,6 +23,7 @@ def generate_response_api(item: Item = Body(...)):
         return {"response": response}
 
 
+# TODO: ver como retornar no chat
 @app.get("/send-report")
 def send_report():
 
