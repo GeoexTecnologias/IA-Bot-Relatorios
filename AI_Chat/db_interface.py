@@ -8,12 +8,13 @@ load_dotenv()
 
 class DBInterface:
     def __init__(self):
-        self.server = os.getenv("SERVER")
+        self.server = os.getenv("SERVER_DB")
         self.username = os.getenv("USERNAME_DB")
-        self.password = os.getenv("PASSWORD")
+        self.password = os.getenv("PASSWORD_DB")
         self.database = os.getenv("DATABASE")
-        self.port = os.getenv("PORT")
+        self.port = os.getenv("PORT_DB")
         self.uri = f"mssql+pymssql://{self.username}:{self.password}@{self.server}/{self.database}"
+        print(self.uri)
         self.conn = pymssql.connect(
             self.server, self.username, self.password, self.database
         )

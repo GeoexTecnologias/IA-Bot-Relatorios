@@ -22,7 +22,7 @@ def store_column_data_types_to_file(table_names, output_file):
             rows = cursor.fetchall()
             file.write(f"Table: {table_name}")
             for row in rows:
-                file.write(f"[Column: {row[0]} {row[1]}],")
+                file.write(f"[{row[0]} {row[1]}],")
             file.write("\n")
 
     conn.close()

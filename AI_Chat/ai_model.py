@@ -68,13 +68,17 @@ def embedding(tables_names: list[str], file_name: str):
 
 def conversational_retriever_chain(persist_directory: str):
     persist_directory = "./embeddings"
+
     embeddings = OpenAIEmbeddings(model="text-embedding-3-small", dimensions=1536)
+
     vector_store = Chroma(
         persist_directory=persist_directory, embedding_function=embeddings
     )
-    llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0.4)
+
+    llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0.5)
+
     retriever = vector_store.as_retriever(
-        search_type="similarity", search_kwargs={"k": 8}
+        search_type="similarity", search_kwargs={"k": 5}
     )
     memory = ConversationBufferMemory(memory_key="chat_history", return_messages=False)
 
@@ -84,10 +88,12 @@ def conversational_retriever_chain(persist_directory: str):
     return crc
 
 
-def prompt_template(question: str):
+def prompt_template(question: str, schema):
     prompt_template = f"""
     
-    Baseado nos dados fornecidos, construa uma consulta SQL usando somente as colunas e tabelas que conhece.
+    {schema}
+    
+    Baseado nos dados fornecidos, construa uma consulta SQL usando somente as colunas e tabelas que conhece. Nao faça alteração nos dados
     
     Construa uma consulta sql que resposta a seguinte pergunta:
     
@@ -119,10 +125,13 @@ def generate_response(user_question: str):
     persist_directory = "./embeddings"
     crc = conversational_retriever_chain(persist_directory=persist_directory)
 
-    formated_question = prompt_template(user_question)
+    with open("tables.txt") as f:
+        tables = " ".join([line.rstrip() for line in f])
 
+    formated_question = prompt_template(question=user_question, schema=tables)
+    print(formated_question)
     model_response = crc.invoke(formated_question)["answer"]
-
+    print(model_response)
     is_valid, response = validate_query(model_response)
 
     if is_valid:
@@ -133,7 +142,8 @@ def generate_response(user_question: str):
 
 if __name__ == "__main__":
     user_question = (
-        "Quantos os projetos estao programados para a carteira de obras de maio"
+        "Qual o total instalado no boletim de produtividade no projeto 1348714"
     )
+
     response = generate_response(user_question)
     print(response)
