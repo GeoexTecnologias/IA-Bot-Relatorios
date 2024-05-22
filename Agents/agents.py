@@ -1,65 +1,119 @@
 from crewai import Agent, Task, Crew, Process
-from crewai_tools import FileReadTool
-from tools import SQLQueryTool
+
+
+from crewai_tools import FileReadTool, tool
+
+
+from tools import SQLServerTool
+
+
 from langchain_community.llms import Ollama
-from tasks import tarefa_consulta, tarefa_geracao_excel, tarefa_verificacao
+
+
+import pymssql
+
+
+from dotenv import load_dotenv
+import os
+
 
 # Configurando a ferramenta SQLQueryTool
-sql_tool = SQLQueryTool()
+
+
+@tool
+def validate_sql(query):
+    """
+
+
+    Validates the SQL schema to ensure the required tables and columns are present.
+
+
+
+    Parameters:
+
+
+    schemas (dict): A dictionary representing the schema of the database.
+
+
+    expected_tables (dict): A dictionary representing the expected tables and columns.
+
+
+
+    Returns:
+
+
+    bool: True if the schema is valid, False otherwise.
+    """
+
+    load_dotenv()
+
+    server = os.getenv("SERVER_DB")
+
+    username = os.getenv("USERNAME_DB")
+
+    password = os.getenv("PASSWORD_DB")
+
+    database = os.getenv("DATABASE")
+
+    conn = pymssql.connect(
+        server=server,
+        user=username,
+        password=password,
+        database=database,
+    )
+
+    try:
+
+        cursor = conn.cursor(as_dict=True)
+
+        cursor.execute(query)
+
+        conn.close()
+
+        return "Query OK"
+
+    except pymssql.Error as e:
+
+        return f"Database query failed: {e}"
+
 
 # Configurando o LLM
+
+
 llm = Ollama(model="llama3")
 
+
 # Agente Verificador
-verificador = Agent(
-    role="Verificador de viabilidade de relatórios",
-    goal="Verificar se a pergunta pode ser respondida com os relatórios disponíveis",
+
+attendant_agent = Agent(
+    role="Report attendant",
+    goal=(
+        "You analyze the users' questions and depending on the question, you pass it on to the DBA,"
+        "which develops the SQL query that generates the report the user wants"
+    ),
     verbose=True,
     memory=True,
-    backstory=(
-        "Você é um especialista em análise de relatórios, com a capacidade de determinar "
-        "rapidamente se uma consulta pode ser respondida com os dados disponíveis."
-    ),
+    backstory=("You are an attendant who passes demands to SQL Developer"),
     llm=llm,
+    cach=True,
 )
+
 
 # Agente Consultor
-consultor = Agent(
+
+sql_developer_agent = Agent(
     role="Senior SQL Developer",
-    goal="Realizar apenas consultas nas tabelas disponíveis",
+    goal=(
+        "You are an experienced SQL Developer who generates SQL queries"
+        "for SQL Server based on the questions given to you by the attendant"
+    ),
     verbose=True,
     memory=True,
     backstory=(
-        "Você é um especialista em realizar consultas detalhadas em bases de dados, "
-        "capaz de extrair informações precisas conforme solicitado."
+        "You are an experienced SQL developer who only makes queries with the columns and tables you know"
+        "You specialize in queries for SQL Server databases"
     ),
-    tools=[sql_tool],
+    tools=[validate_sql],
     llm=llm,
+    cache=True,
 )
-
-# Agente Gerador de Excel
-gerador_excel = Agent(
-    role="Gerador de Excel",
-    goal="Gerar arquivos Excel com os resultados das consultas realizadas",
-    verbose=True,
-    memory=True,
-    backstory=(
-        "Você é um especialista em manipulação de dados, com a capacidade de gerar relatórios Excel "
-        "de forma rápida e eficiente."
-    ),
-    output_file="relatorio.xlsx",
-    tools=[sql_tool],
-    llm=llm,
-)
-
-# Aqui você pode definir tarefas e a formação da sua Crew, como no exemplo anterior
-# Exemplo de formação da Crew
-crew = Crew(
-    agents=[verificador, consultor, gerador_excel],
-    tasks=[],  # Adicione suas tarefas aqui
-    process=Process.sequential,
-)
-
-# Executar a Crew
-result = crew.kickoff(inputs={"some_input_key": "some_input_value"})
-print(result)

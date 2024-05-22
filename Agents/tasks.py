@@ -1,28 +1,40 @@
-# Tarefa de Verificação
-from agents import consultor, gerador_excel, verificador
+# Import necessary agents and modules
+from agents import sql_developer_agent, attendant_agent
+
+
+from crewai import Task
+
+
+# Verification Task
+
 
 tarefa_verificacao = Task(
     description=(
-        "Verificar se a pergunta pode ser respondida usando as tabelas Projeto e ProjetoProgramacaoCarteira."
-        "Os schemas das tabelas sao {schema_verificacao}"
+        "User question: '{question}' "
+        "Verify if the question can be answered using the tables Projeto and ProjetoProgramacaoCarteira. "
+        "The structure of the tables are {schema_verificacao}."
     ),
-    expected_output="Resposta indicando se a consulta pode ser realizada",
-    agent=verificador,
+    expected_output="Response indicating whether the query can be performed on the available tables",
+    agent=attendant_agent,
 )
 
-# Tarefa de Consulta
+
+# SQL Query Task
+
+
 tarefa_consulta = Task(
     description=(
-        "Realizar a consulta nas tabelas Projeto e ProjetoProgramacaoCarteira de acordo com a pergunta do usuário."
-        "Sabendo que o schema da tabela é: {schema_consulta}"
+        "Return a SQL query for the SQL Server dialect, knowing that we have the tables with the structure: {schema_consulta}."
     ),
-    expected_output="Resultados da consulta",
-    agent=consultor,
+    expected_output="query.txt",
+    agent=sql_developer_agent,
 )
 
-# Tarefa de Geração de Excel
-tarefa_geracao_excel = Task(
-    description=("Gerar um arquivo Excel com os resultados da consulta realizada."),
-    expected_output="Arquivo Excel gerado com os resultados da consulta",
-    agent=gerador_excel,
+
+tarefa_finalizar_atendimento = Task(
+    description=(
+        "Return to the user if you have done the query, otherwise, tell him you can't validate the query with the available data"
+    ),
+    expected_output="A message to the user",
+    agent=sql_developer_agent,
 )
