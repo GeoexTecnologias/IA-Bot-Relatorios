@@ -1,18 +1,8 @@
 from crewai import Agent, Task, Crew, Process
-
-
 from crewai_tools import FileReadTool, tool
-
-
 from tools import SQLServerTool
-
-
 from langchain_community.llms import Ollama
-
-
 import pymssql
-
-
 from dotenv import load_dotenv
 import os
 
@@ -82,6 +72,8 @@ def validate_sql(query):
 
 llm = Ollama(model="llama3")
 
+tables = ["Projeto", "ProjetoProgramacaoCarteira"]
+schema = SQLServerTool().save_db_schema(table_names=tables)
 
 # Agente Verificador
 
@@ -90,10 +82,13 @@ attendant_agent = Agent(
     goal=(
         "You analyze the users' questions and depending on the question, you pass it on to the DBA,"
         "which develops the SQL query that generates the report the user wants"
+        "If the question doesn't make sense, end the interaction"
+        f"The database of our company has the following tables {tables}"
+        f"with the following structure: {schema}"
     ),
     verbose=True,
     memory=True,
-    backstory=("You are an attendant who passes demands to SQL Developer"),
+    backstory=("You are an attendant who passes demands to the Senior SQL Developer"),
     llm=llm,
     cach=True,
 )
@@ -106,6 +101,8 @@ sql_developer_agent = Agent(
     goal=(
         "You are an experienced SQL Developer who generates SQL queries"
         "for SQL Server based on the questions given to you by the attendant"
+        f"The database of our company has the following tables {tables}"
+        f"with the following structure: {schema}"
     ),
     verbose=True,
     memory=True,

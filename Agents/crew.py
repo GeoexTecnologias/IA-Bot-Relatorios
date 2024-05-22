@@ -16,13 +16,6 @@ from tasks import tarefa_verificacao, tarefa_consulta
 
 
 def main(question):
-
-    sql_server_tool = SQLServerTool()
-
-    tables = ["Projeto", "ProjetoProgramacaoCarteira"]
-
-    schemas = sql_server_tool.save_db_schema(table_names=tables)
-
     crew = Crew(
         agents=[attendant_agent, sql_developer_agent],
         tasks=[tarefa_verificacao, tarefa_consulta],
@@ -33,8 +26,6 @@ def main(question):
 
     result = crew.kickoff(
         inputs={
-            "schema_verificacao": schemas,
-            "schema_consulta": schemas,
             "question": question,
         }
     )

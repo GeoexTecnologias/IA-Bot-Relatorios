@@ -1,20 +1,19 @@
 # Import necessary agents and modules
 from agents import sql_developer_agent, attendant_agent
-
-
+from tools import SQLServerTool
 from crewai import Task
 
-
+sql_tool = SQLServerTool()
 # Verification Task
 
 
 tarefa_verificacao = Task(
     description=(
         "User question: '{question}' "
-        "Verify if the question can be answered using the tables Projeto and ProjetoProgramacaoCarteira. "
-        "The structure of the tables are {schema_verificacao}."
+        "Verify if the question can be answered using the tables of the database"
+        ""
     ),
-    expected_output="Response indicating whether the query can be performed on the available tables",
+    expected_output="Response indicating if the query can be performed on the available tables or not",
     agent=attendant_agent,
 )
 
@@ -23,11 +22,10 @@ tarefa_verificacao = Task(
 
 
 tarefa_consulta = Task(
-    description=(
-        "Return a SQL query for the SQL Server dialect, knowing that we have the tables with the structure: {schema_consulta}."
-    ),
+    description=("Return a SQL query for the SQL Server dialect"),
     expected_output="query.txt",
     agent=sql_developer_agent,
+    tools=[sql_tool],
 )
 
 

@@ -39,7 +39,7 @@ def validate_query(query):
 
 
 def embedding(tables_names: list[str], file_name: str):
-    store_column_data_types_to_file(table_names, file_name)
+    store_column_data_types_to_file(tables_names, file_name)
     tables_schema = open("tables.txt", "r")
 
     tokens = 0
@@ -61,31 +61,31 @@ def embedding(tables_names: list[str], file_name: str):
 
     persist_directory = "./embeddings"
 
-    vector_store = Chroma.from_documents(
-        chunks, embeddings, persist_directory=persist_directory
-    )
+    # vector_store = Chroma.from_documents(
+    #     chunks, embeddings, persist_directory=persist_directory
+    # )
 
 
 def conversational_retriever_chain(persist_directory: str):
-    persist_directory = "./embeddings"
+    # persist_directory = "./embeddings"
 
-    embeddings = OpenAIEmbeddings(model="text-embedding-3-small", dimensions=1536)
+    # embeddings = OpenAIEmbeddings(model="text-embedding-3-small", dimensions=1536)
 
-    vector_store = Chroma(
-        persist_directory=persist_directory, embedding_function=embeddings
-    )
+    # vector_store = Chroma(
+    #     persist_directory=persist_directory, embedding_function=embeddings
+    # )
 
     llm = ChatOpenAI(model="gpt-3.5-turbo-0125", temperature=0.5)
 
-    retriever = vector_store.as_retriever(
-        search_type="similarity", search_kwargs={"k": 5}
-    )
-    memory = ConversationBufferMemory(memory_key="chat_history", return_messages=False)
+    # retriever = vector_store.as_retriever(
+    #     search_type="similarity", search_kwargs={"k": 5}
+    # )
+    # memory = ConversationBufferMemory(memory_key="chat_history", return_messages=False)
 
-    crc = ConversationalRetrievalChain.from_llm(
-        llm=llm, retriever=retriever, memory=memory, chain_type="stuff"
-    )
-    return crc
+    # crc = ConversationalRetrievalChain.from_llm(
+    #     llm=llm, retriever=retriever, memory=memory, chain_type="stuff"
+    # )
+    return llm
 
 
 def prompt_template(question: str, schema):
@@ -121,7 +121,7 @@ def generate_response(user_question: str):
 
     file_name = "tables.txt"
 
-    # TODO: descomentar caso mude o table_names embedding(tables_names=table_names, file_name=file_name)
+    embedding(tables_names=table_names, file_name=file_name)
     persist_directory = "./embeddings"
     crc = conversational_retriever_chain(persist_directory=persist_directory)
 
@@ -130,7 +130,7 @@ def generate_response(user_question: str):
 
     formated_question = prompt_template(question=user_question, schema=tables)
     print(formated_question)
-    model_response = crc.invoke(formated_question)["answer"]
+    model_response = crc.invoke(formated_question).content
     print(model_response)
     is_valid, response = validate_query(model_response)
 
@@ -144,6 +144,5 @@ if __name__ == "__main__":
     user_question = (
         "Qual o total instalado no boletim de produtividade no projeto 1348714"
     )
-
     response = generate_response(user_question)
     print(response)
