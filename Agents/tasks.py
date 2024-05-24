@@ -27,12 +27,3 @@ tarefa_consulta = Task(
     agent=sql_developer_agent,
     tools=[sql_tool],
 )
-
-
-tarefa_finalizar_atendimento = Task(
-    description=(
-        "Return to the user if you have done the query, otherwise, tell him you can't validate the query with the available data"
-    ),
-    expected_output="A message to the user",
-    agent=sql_developer_agent,
-)
