@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from ai_model import generate_response
 import pandas as pd
 import io
-
+import csv
 
 class Item(BaseModel):
     user_question: str
@@ -29,7 +29,7 @@ def send_report():
     with open("Report.csv", "rb") as file:
         data = file.read()
 
-    output = StringIO()
+    output = io.StringIO()
     writer = csv.writer(output)
     writer.writerows(data)
 
