@@ -28,10 +28,9 @@ def send_report():
 
     with open("Report.csv", "rb") as file:
         data = file.read()
-
-    output = io.StringIO()
-    writer = csv.writer(output)
-    writer.writerows(data)
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerows(data)
 
     return Response(
         content=output.getvalue(),
