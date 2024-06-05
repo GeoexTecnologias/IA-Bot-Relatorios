@@ -135,9 +135,9 @@ def generate_response(user_question: str):
     is_valid, response = validate_query(model_response)
 
     if is_valid:
-        return response
+        return str(response)
     else:
-        return model_response
+        return str(model_response)
 
 
 if __name__ == "__main__":

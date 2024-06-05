@@ -1,6 +1,7 @@
 import requests
 import json
 
+url = "http://127.0.0.1:8000/generate-response"
 
 data = {
     "user_question": "Quantos os projetos estao programados para a carteira de obras de maio"
@@ -11,3 +12,4 @@ response = requests.post(
 )
 
 print(response.status_code)
+print(response.content)

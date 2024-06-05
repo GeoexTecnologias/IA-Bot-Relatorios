@@ -15,12 +15,11 @@ app = FastAPI()
 @app.post("/generate-response")
 def generate_response_api(item: Item = Body(...)):
     response = generate_response(item.user_question)
-
-    if isinstance(response, pd.DataFrame):
-        response.to_csv("Report.csv", index=False)
-        return send_report()
-    else:
-        return {"response": response}
+    # if isinstance(response, pd.DataFrame):
+    #     response.to_csv("Report.csv", index=False)
+    #     return send_report()
+    # else:
+    return response
 
 
 # TODO: ver como retornar no chat
