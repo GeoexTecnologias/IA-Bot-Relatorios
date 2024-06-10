@@ -59,6 +59,7 @@ def embedding(tables_names: list[str], file_name: str):
         model="text-embedding-3-small",
     )
 
+
     persist_directory = "./embeddings"
 
     # vector_store = Chroma.from_documents(
